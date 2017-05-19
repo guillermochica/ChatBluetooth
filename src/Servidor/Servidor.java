@@ -4,14 +4,17 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Scanner;
 
+
 import javax.bluetooth.LocalDevice;
+import javax.bluetooth.UUID;
 import javax.microedition.io.Connector;
 import javax.microedition.io.StreamConnection;
 import javax.microedition.io.StreamConnectionNotifier;
 
 public class Servidor {
 	//acepta la conexion entrante
-	private static final String SERVICE_CLASS = "1101";
+	private static final String SERVICE_CLASS = "0x1101";
+	private static final String SERVICE_NAME = "chat";
 	
 	private String url;
 	
@@ -25,12 +28,13 @@ public class Servidor {
 	private HebraRecibirServidor h;
 
 	private Scanner s;
-	
+
 	
 	public Servidor() throws IOException{
 		ld = LocalDevice.getLocalDevice();
-		url = "btspp://" + ld.getBluetoothAddress() + ":" + SERVICE_CLASS;
+		url = "btspp://" + "localhost" + ":" + new UUID(0x1101).toString()+";name="+SERVICE_NAME;
 		service = (StreamConnectionNotifier) Connector.open(url);
+		System.out.println("Servidor iniciado");
 		s = new Scanner(System.in);
 	}
 	
@@ -40,18 +44,31 @@ public class Servidor {
 		os = con.openOutputStream();
 		in = con.openInputStream();
 		
-		h = new HebraRecibirServidor(in);
+		h = new HebraRecibirServidor(in, os, con);
 		h.start();
 		
 	}
 	
 	public void enviarMensaje() throws IOException{
-		os.write("holaaa".getBytes());
+		System.out.println("Iniciando chat, escribe CLOSE para terminar");
+		
 		String m;
-		while(true) {
+		boolean seguir=true;
+		while(seguir) {
+			
+			m=null;
 			m = s.nextLine();
+			if(m.equals("CLOSE")) {
+				seguir=false;
+			}
 			os.write(m.getBytes());
+			os.flush();
+			
 		}
+		
+		os.close();
+		in.close();
+		con.close();
 	}
 
 }

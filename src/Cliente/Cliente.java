@@ -2,6 +2,7 @@ package Cliente;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.Scanner;
 
 import javax.bluetooth.BluetoothStateException;
@@ -9,6 +10,7 @@ import javax.bluetooth.DiscoveryAgent;
 import javax.bluetooth.DiscoveryListener;
 import javax.bluetooth.LocalDevice;
 import javax.bluetooth.RemoteDevice;
+import javax.bluetooth.ServiceRecord;
 import javax.bluetooth.UUID;
 import javax.microedition.io.Connector;
 import javax.microedition.io.StreamConnection;
@@ -17,13 +19,14 @@ import Bluetooth.MyDiscoveryListener;
 
 public class Cliente {
 	
-	private static final int SERVICE_NAME_ATTRID = 0x1101;
+	private static final int SERVICE_NAME_ATTRID = 0x0100;
 	
 	//Realiza la conexion saliente bluetooth
 	
 	private LocalDevice ld;
 	
 	private DiscoveryAgent da;
+	
 	
 	private DiscoveryListener lstnr;
 	
@@ -39,6 +42,8 @@ public class Cliente {
 	HebraRecibirCliente h;
 	
 	Scanner s;
+	
+	public boolean seguir=true;
 	
 	
 	public Cliente(String friendlyName) throws BluetoothStateException{
@@ -75,23 +80,26 @@ public class Cliente {
             RemoteDevice btDevice = MyDiscoveryListener.devicesDiscovered.get(i); //referencia a cada dispositivo de la lista
 
             synchronized(completedEvent) {
-            	if(btDevice.getFriendlyName(false).equals(servidor)) {
-            		
-            		//Solo buscamos en el dispositivo que nos interesa
+            	
             		
             		System.out.println("search services on " + btDevice.getBluetoothAddress() + " " + btDevice.getFriendlyName(false));
                     /* CONFIGURACION DE LOS PARAMETROS DE BUSQUEDA DE SERVICIOS*/
                     UUID uuids[]=new UUID[1];
-                    uuids[0] = new UUID (0x1002);
+                    uuids[0] = new UUID (0x1101);
                     int attridset[] = new int[1];
                     attridset[0] = SERVICE_NAME_ATTRID;
                     /* INICIAR BUSQUEDA DE SERVICIOS EN UN DISPOSITIVO EN CONCRETO*/
                     da.searchServices(attridset, uuids, btDevice, lstnr);
-                    url = ((MyDiscoveryListener) lstnr).getUrl();
+                   
+                   
+                   
                    /*ESPERAR A QUE DICHA BUSQUEDA FINALICE*/
-                    completedEvent.wait();
-
-            	}
+                    synchronized(completedEvent){
+                    	completedEvent.wait();
+                    }
+                    url = ((MyDiscoveryListener) lstnr).getUrl();
+                    
+            	
                 
             }
         }
@@ -101,17 +109,30 @@ public class Cliente {
 		con = (StreamConnection) Connector.open(url);
 		os = con.openOutputStream();
 		in = con.openInputStream();
-		h = new HebraRecibirCliente(in);
+		h = new HebraRecibirCliente(in,os, con);
 		h.start();
 	}
 	
 	public void enviarMensaje() throws IOException{
-		os.write("holaaa".getBytes());
+		System.out.println("Iniciando chat escribe CLOSE para terminar");
+		
 		String m;
-		while(true) {
+		
+		while(seguir) {
+			
+			m = null;
 			m = s.nextLine();
+			if(m.equals("CLOSE")) {
+				
+				seguir=false;
+			}
 			os.write(m.getBytes());
+			os.flush();
 		}
+		
+		os.close();
+		in.close();
+		con.close();
 	}
 	
 

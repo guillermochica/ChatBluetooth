@@ -55,7 +55,9 @@ public class MyDiscoveryListener implements javax.bluetooth.DiscoveryListener {
 			}
 			
 			System.out.println("URL: "+servRecord[i].getConnectionURL(ServiceRecord.NOAUTHENTICATE_NOENCRYPT, false));
+			
 			url = servRecord[i].getConnectionURL(ServiceRecord.NOAUTHENTICATE_NOENCRYPT, false);
+				
 			
 		}
 	}
