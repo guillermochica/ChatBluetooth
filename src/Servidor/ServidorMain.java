@@ -8,6 +8,7 @@ public class ServidorMain {
 		
 		s.escucharPeticiones();
 		s.enviarMensaje();
+		s.close();
 		
 
 	}

@@ -37,13 +37,13 @@ public class Cliente {
 	
 	private StreamConnection con;
 	private OutputStream os;
-	private InputStream in;
+	public InputStream in;
 	
 	HebraRecibirCliente h;
 	
 	Scanner s;
 	
-	public boolean seguir=true;
+	public boolean seguir;
 	
 	
 	public Cliente(String friendlyName) throws BluetoothStateException{
@@ -53,6 +53,7 @@ public class Cliente {
 		completedEvent = new Object();
 		lstnr = new MyDiscoveryListener(completedEvent);
 		s = new Scanner(System.in);
+		seguir=true;
 	}
 	
 	public void buscarDispositivos() throws BluetoothStateException, InterruptedException{
@@ -80,7 +81,9 @@ public class Cliente {
             RemoteDevice btDevice = MyDiscoveryListener.devicesDiscovered.get(i); //referencia a cada dispositivo de la lista
 
             synchronized(completedEvent) {
-            	
+            	if(btDevice.getFriendlyName(false).equals(servidor)) {
+            		
+            		//Solo buscamos en el dispositivo que nos interesa
             		
             		System.out.println("search services on " + btDevice.getBluetoothAddress() + " " + btDevice.getFriendlyName(false));
                     /* CONFIGURACION DE LOS PARAMETROS DE BUSQUEDA DE SERVICIOS*/
@@ -97,20 +100,24 @@ public class Cliente {
                     synchronized(completedEvent){
                     	completedEvent.wait();
                     }
+                    
                     url = ((MyDiscoveryListener) lstnr).getUrl();
                     
-            	
+            	}
                 
             }
         }
 	}
 	
 	public void conectar() throws IOException {
-		con = (StreamConnection) Connector.open(url);
-		os = con.openOutputStream();
-		in = con.openInputStream();
-		h = new HebraRecibirCliente(in,os, con);
-		h.start();
+		
+			con = (StreamConnection) Connector.open(url);
+			os = con.openOutputStream();
+			in = con.openInputStream();
+			h = new HebraRecibirCliente(this);
+			h.start();
+		
+		
 	}
 	
 	public void enviarMensaje() throws IOException{
@@ -125,14 +132,30 @@ public class Cliente {
 			if(m.equals("CLOSE")) {
 				
 				seguir=false;
+				os.write(m.getBytes());
+				os.flush();
 			}
-			os.write(m.getBytes());
-			os.flush();
+			
+			else{
+				if(seguir) {
+					os.write(m.getBytes());
+					os.flush();
+				}
+				
+				
+			}
+			
 		}
 		
+		
+	}
+	
+	public void close() throws IOException {
 		os.close();
 		in.close();
 		con.close();
+		s.close();
+		System.out.println("Stream closed");
 	}
 	
 

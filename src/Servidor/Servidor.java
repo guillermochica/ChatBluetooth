@@ -23,11 +23,13 @@ public class Servidor {
 	private StreamConnectionNotifier service;
 	private StreamConnection con;
 	private OutputStream os;
-	private InputStream in;
+	public InputStream in;
 	
 	private HebraRecibirServidor h;
 
 	private Scanner s;
+	
+	public boolean seguir;
 
 	
 	public Servidor() throws IOException{
@@ -36,6 +38,7 @@ public class Servidor {
 		service = (StreamConnectionNotifier) Connector.open(url);
 		System.out.println("Servidor iniciado");
 		s = new Scanner(System.in);
+		seguir=true;
 	}
 	
 	public void escucharPeticiones() throws IOException{
@@ -44,7 +47,7 @@ public class Servidor {
 		os = con.openOutputStream();
 		in = con.openInputStream();
 		
-		h = new HebraRecibirServidor(in, os, con);
+		h = new HebraRecibirServidor(this);
 		h.start();
 		
 	}
@@ -53,22 +56,37 @@ public class Servidor {
 		System.out.println("Iniciando chat, escribe CLOSE para terminar");
 		
 		String m;
-		boolean seguir=true;
+		
 		while(seguir) {
 			
 			m=null;
 			m = s.nextLine();
 			if(m.equals("CLOSE")) {
 				seguir=false;
+				os.write(m.getBytes());
+				os.flush();
 			}
-			os.write(m.getBytes());
-			os.flush();
 			
+			else{
+				if(seguir) {
+					os.write(m.getBytes());
+					os.flush();
+				}
+				
+			}
+
 		}
+	
 		
+	}
+	
+	public void close() throws IOException{
 		os.close();
 		in.close();
 		con.close();
+		s.close();
+		System.out.println("Stream closed");
+		
 	}
 
 }

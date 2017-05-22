@@ -11,6 +11,8 @@ public class MyDiscoveryListener implements javax.bluetooth.DiscoveryListener {
 	public static final ArrayList<RemoteDevice>/*<RemoteDevice>*/ devicesDiscovered = new ArrayList<RemoteDevice>();
 	private String url;
 	
+	public ServiceRecord[] sRecord;
+	
 	public String getUrl() {
 		return url;
 	}
@@ -48,16 +50,16 @@ public class MyDiscoveryListener implements javax.bluetooth.DiscoveryListener {
 			
 			if(d!=null){
 				System.out.println("Servicio: "+(String) d.getValue());
-				
+				if(d.getValue().equals("chat")) {
+					System.out.println("Encontrado servicio de chat");
+					url = servRecord[i].getConnectionURL(ServiceRecord.NOAUTHENTICATE_NOENCRYPT, false);
+					System.out.println("URL: "+url);
+				}
 			}
 			else{
 				System.out.println("Unnamed service");
 			}
-			
-			System.out.println("URL: "+servRecord[i].getConnectionURL(ServiceRecord.NOAUTHENTICATE_NOENCRYPT, false));
-			
-			url = servRecord[i].getConnectionURL(ServiceRecord.NOAUTHENTICATE_NOENCRYPT, false);
-				
+
 			
 		}
 	}
